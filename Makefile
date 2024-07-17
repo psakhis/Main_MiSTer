@@ -25,6 +25,10 @@ INCLUDE += -I./lib/zstd/lib
 INCLUDE += -I./lib/libchdr/include
 INCLUDE += -I./lib/bluetooth
 INCLUDE += -I./lib/serial_server/library
+INCLUDE += -I./lib/libelf
+INCLUDE += -I./lib/libbpf
+INCLUDE += -I./lib/libxdp
+INCLUDE += -I./support/groovy/kernel/usr/include
 
 PRJ = MiSTer
 C_SRC =   $(wildcard *.c) \
@@ -43,13 +47,14 @@ CPP_SRC = $(wildcard *.cpp) \
 IMG =     $(wildcard *.png)
 
 IMLIB2_LIB  = -Llib/imlib2 -lfreetype -lbz2 -lpng16 -lz -lImlib2
+AFXDP_LIB  = -lelf lib/libxdp/libxdp.a lib/libbpf/libbpf.a
 
 OBJ	= $(C_SRC:.c=.c.o) $(CPP_SRC:.cpp=.cpp.o) $(IMG:.png=.png.o)
 DEP	= $(C_SRC:.c=.c.d) $(CPP_SRC:.cpp=.cpp.d)
 
 DFLAGS	= $(INCLUDE) -D_7ZIP_ST -DPACKAGE_VERSION=\"1.3.3\" -DHAVE_LROUND -DHAVE_STDINT_H -DHAVE_STDLIB_H -DHAVE_SYS_PARAM_H -DENABLE_64_BIT_WORDS=0 -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE -DVDATE=\"`date +"%y%m%d"`\"
 CFLAGS	= $(DFLAGS) -Wall -Wextra -Wno-strict-aliasing -Wno-stringop-overflow -Wno-stringop-truncation -Wno-format-truncation -Wno-psabi -Wno-restrict -c -O3
-LFLAGS	= -lc -lstdc++ -lm -lrt $(IMLIB2_LIB) -Llib/bluetooth -lbluetooth -lpthread
+LFLAGS	= -lc -lstdc++ -lm -lrt $(IMLIB2_LIB) $(AFXDP_LIB)  -Llib/bluetooth -lbluetooth -lpthread
 
 OUTPUT_FILTER = sed -e 's/\(.[a-zA-Z]\+\):\([0-9]\+\):\([0-9]\+\):/\1(\2,\ \3):/g'
 

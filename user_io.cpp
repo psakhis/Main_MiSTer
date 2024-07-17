@@ -369,7 +369,7 @@ char has_menu()
 }
 
 void user_io_read_core_name()
-{
+{	
 	is_menu_type = 0;
 	is_x86_type  = 0;
 	is_no_type   = 0;
@@ -388,6 +388,7 @@ void user_io_read_core_name()
 	is_st_type = 0;
 	is_pcxt_type = 0;
 	is_uneon_type = 0;
+	is_groovy_type = 0;
 	core_name[0] = 0;
 
 	char *p = user_io_get_confstr(0);
@@ -395,7 +396,7 @@ void user_io_read_core_name()
 
 	// get core name
 	if (ovr_name[0]) strcpy(core_name, ovr_name);
-	else if (orig_name[0]) strcpy(core_name, p);
+	else if (orig_name[0]) strcpy(core_name, p);	
 
 	printf("Core name is \"%s\"\n", core_name);
 }
@@ -1686,6 +1687,11 @@ void user_io_l_analog_joystick(unsigned char joystick, char valueX, char valueY)
 		}
 		DisableIO();
 	}
+	
+	if (is_groovy())
+	{
+		groovy_send_analog(joystick, 0, valueX, valueY);
+	}
 }
 
 void user_io_r_analog_joystick(unsigned char joystick, char valueX, char valueY)
@@ -1703,25 +1709,35 @@ void user_io_r_analog_joystick(unsigned char joystick, char valueX, char valueY)
 		}
 		DisableIO();
 	}
+	
+	if (is_groovy())
+	{
+		groovy_send_analog(joystick, 1, valueX, valueY);
+	}
 }
 
 void user_io_digital_joystick(unsigned char joystick, uint64_t map, int newdir)
 {
 	uint8_t joy = (joystick>1 || !joyswap) ? joystick : joystick ^ 1;
-	static int use32 = 0;
+	static int use32 = 0;	
 	// primary button mappings are in 31:0, alternate mappings are in 64:32.
 	// take the logical OR to ensure a held button isn't overriden
 	// by other mapping being pressed
 	uint32_t bitmask = (uint32_t)(map) | (uint32_t)(map >> 32);
-	use32 |= bitmask >> 16;
-	spi_uio_cmd_cont((joy < 2) ? (UIO_JOYSTICK0 + joy) : (UIO_JOYSTICK2 + joy - 2));
+	use32 |= bitmask >> 16;	
+	spi_uio_cmd_cont((joy < 2) ? (UIO_JOYSTICK0 + joy) : (UIO_JOYSTICK2 + joy - 2));	
 	spi_w(bitmask);
 	if(use32) spi_w(bitmask >> 16);
 	DisableIO();
 
 	if (!is_minimig() && joy_transl == 1 && newdir)
 	{
-		user_io_l_analog_joystick(joystick, (bitmask & 2) ? 128 : (bitmask & 1) ? 127 : 0, (bitmask & 8) ? 128 : (bitmask & 4) ? 127 : 0);
+		user_io_l_analog_joystick(joystick, (bitmask & 2) ? 128 : (bitmask & 1) ? 127 : 0, (bitmask & 8) ? 128 : (bitmask & 4) ? 127 : 0);		
+	}
+	
+	if (is_groovy())
+	{
+		groovy_send_joystick(joystick, bitmask);
 	}
 }
 
@@ -3548,7 +3564,7 @@ void user_io_poll()
 }
 
 static void send_keycode(unsigned short key, int press)
-{
+{	
 	if (is_pcxt())
 	{
 		//WIN+... we override this hotkey in the core.
@@ -3658,8 +3674,13 @@ static void send_keycode(unsigned short key, int press)
 
 	if (core_type == CORE_TYPE_8BIT)
 	{
+		if (is_groovy())
+		{
+			groovy_send_keyboard(key, press);
+		}
+		
 		uint32_t code = get_ps2_code(key);
-		if (code == NONE) return;
+		if (code == NONE) return;				
 
 		//pause
 		if ((code & 0xff) == 0xE1)
@@ -3759,7 +3780,7 @@ static void send_keycode(unsigned short key, int press)
 
 			DisableIO();
 		}
-	}
+	}		
 }
 
 void user_io_mouse(unsigned char b, int16_t x, int16_t y, int16_t w)
@@ -3846,6 +3867,11 @@ void user_io_mouse(unsigned char b, int16_t x, int16_t y, int16_t w)
 				spi_w(ps2_mouse[1] | ((((uint16_t)b) << 5) & 0xF00));
 				spi_w(ps2_mouse[2] | ((((uint16_t)b) << 1) & 0x100));
 				DisableIO();
+				
+				if (is_groovy())
+				{
+					groovy_send_mouse(ps2_mouse[0], ps2_mouse[1], ps2_mouse[2], (unsigned char) w);					
+				}
 			}
 		}
 		return;
@@ -3906,7 +3932,7 @@ void user_io_kbd(uint16_t key, int press)
 	static int block_F12 = 0;
 
 	if(is_menu()) spi_uio_cmd(UIO_KEYBOARD); //ping the Menu core to wakeup
-
+	
 	// Win+PrnScr or Alt/Win+ScrLk - screen shot
 	bool key_WinPrnScr = (key == KEY_SYSRQ && (get_key_mod() & (RGUI | LGUI)));
 	// Excluding scroll lock for PS/2 so Win+ScrLk can be used to change the emu mode.

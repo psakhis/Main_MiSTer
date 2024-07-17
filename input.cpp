@@ -1718,7 +1718,7 @@ void input_uinp_destroy()
 static unsigned long uinp_repeat = 0;
 static struct input_event uinp_ev;
 static void uinp_send_key(uint16_t key, int press)
-{
+{ 
 	if (uinp_fd > 0)
 	{
 		if (!uinp_ev.value && press)
