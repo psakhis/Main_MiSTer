@@ -6888,12 +6888,7 @@ void HandleUI(void)
 				menustate = MENU_FILE_SELECT1;
 				break;
 			}
-		}
-		
-		if (is_groovy()) //clean server
-		{
-			groovy_stop();
-		}
+		}				
 		
 		if (isXmlName(Selected_tmp))
 		{ 
@@ -6906,11 +6901,7 @@ void HandleUI(void)
 		}
 		break;
 
-	case MENU_CORE_FILE_SELECTED2:
-		if (is_groovy()) //clean server
-		{
-			groovy_stop();
-		}
+	case MENU_CORE_FILE_SELECTED2:		
 		fpga_load_rbf(Selected_tmp, selPath);
 		menustate = MENU_NONE1;
 		break;

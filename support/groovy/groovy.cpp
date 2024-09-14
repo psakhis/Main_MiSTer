@@ -2505,13 +2505,16 @@ void groovy_stop()
 			if (xsk_socket->xsk != NULL)
 			{
 				xsk_socket__delete(xsk_socket->xsk);
+				LOG(0, "[XDP][%s]\n", "Closing socket");
 			}
 			if (umem->umem != NULL)
 			{
 				xsk_umem__delete(umem->umem);
 				shmem_unmap(packet_buffer, packet_buffer_size);
+				LOG(0, "[XDP][%s]\n", "Unmap umem");
 			}
 			bpf_set_link_xdp_fd(if_nametoindex("eth0"), -1, XDP_FLAGS_DRV_MODE);
+			LOG(0, "[XDP][%s]\n", "Unloading xdp eth0");
 			//bpf_set_link_xdp_fd(if_nametoindex("eth0"), -1, XDP_FLAGS_SKB_MODE);			
 			 
 		}
